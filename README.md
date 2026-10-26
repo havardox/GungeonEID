@@ -22,7 +22,7 @@ In `BepInEx/config/gungeon.eid.externalitemdescriptions.cfg`:
 | Setting | Default | |
 |---|---|---|
 | `Enabled` | `true` | Show descriptions. |
-| `ToggleKey` | `F4` | Show/hide key. Avoid F1–F3, Slash and Backtick (used by Mod the Gungeon API). |
+| `ToggleKey` | `F4` | Show/hide key. |
 | `Scale` | `0` | Text and sprite size; 0 picks one for your resolution. |
 | `MaxWidth` | `50` | Line length in characters. |
 | `OwnedColor` | `#4DA6FF` | Color for things you have. |

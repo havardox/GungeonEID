@@ -35,7 +35,7 @@ namespace GungeonEID
             Enabled = file.Bind("General", "Enabled", true,
                 "Show a description when standing next to a gun or item.");
             ToggleKey = file.Bind("General", "ToggleKey", new KeyboardShortcut(KeyCode.F4),
-                "Key that shows or hides the description. F1-F3, Slash and BackQuote are used by Mod the Gungeon API.");
+                "Key that shows or hides the description.");
 
             Scale = file.Bind("Layout", "Scale", 0,
                 new ConfigDescription("Size of the text and sprites. 0 picks a size for your resolution (1 at 1080p, 2 at 1440p, 3 at 4K).",
