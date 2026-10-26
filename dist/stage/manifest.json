@@ -1,0 +1,10 @@
+{
+    "name": "External_Item_Descriptions",
+    "author_name": "harald",
+    "version_number": "1.0.0",
+    "website_url": "",
+    "description": "Shows stats, DPS, effects and synergies for the gun or item you're standing next to.",
+    "dependencies": [
+        "BepInEx-BepInExPack_EtG-5.4.2101"
+    ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "icGsFPleXeE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\haral\\Documents\\GungeonEID\\GungeonEID.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\haral\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "C:\\Users\\haral\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net35\\1.0.3\\microsoft.netframework.referenceassemblies.net35.1.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,8 @@
+C:\Users\haral\Documents\GungeonEID\bin\Release\eid_data.json
+C:\Users\haral\Documents\GungeonEID\bin\Release\GungeonEID.dll
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.csproj.AssemblyReference.cache
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.AssemblyInfoInputs.cache
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.AssemblyInfo.cs
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.csproj.CoreCompileInputs.cache
+C:\Users\haral\Documents\GungeonEID\obj\Release\GungeonEID.dll
