@@ -1,8 +1,6 @@
 """Writes package/icon.png (256x256, Thunderstore's required size).
 
-The icon shows The Exotic's gun sprite (the_exotic.png, from the Enter the Gungeon wiki) as the
-hologram The Exotic projects over chests: a cyan, scanlined image floating above a light beam.
-Three of the gun's stats are written underneath in the same hologram colors.
+A revolver hologram (revolver.png) above stat bars, on a Pip-Boy style screen.
 """
 import os
 import struct
@@ -14,31 +12,21 @@ SIZE = 64   # canvas, in art pixels
 SCALE = 4   # 64 * 4 = 256
 
 BG = (22, 18, 30)
-HALO = (26, 58, 80)
-BEAM = (32, 78, 104)
-BEAM_EDGE = (56, 142, 186)
-EMITTER = (200, 250, 255)
-DARK = (22, 96, 136)
-MID = (70, 190, 235)
-LIGHT = (200, 252, 255)
-LABEL = (70, 160, 200)
+CASE_SHADOW = (78, 78, 82)
+CASE = (132, 132, 136)
+CASE_LIGHT = (172, 172, 176)
+SCREW = (196, 196, 200)
+SCREEN = (8, 14, 32)
+HALO = (18, 36, 80)
+DARK = (22, 72, 150)
+MID = (70, 150, 255)
+LIGHT = (200, 230, 255)
+LABEL = (40, 90, 170)
 
-STATS = [("DPS", "44.5"), ("RELOAD", "1.5"), ("AMMO", "50")]
+SCREEN_BOX = (5, 5, 58, 58)  # left, top, right, bottom (inclusive)
 
-# 3x5 pixel font for the stat lines.
-FONT = {
-    "A": ["010", "101", "111", "101", "101"], "D": ["110", "101", "101", "101", "110"],
-    "E": ["111", "100", "110", "100", "111"], "L": ["100", "100", "100", "100", "111"],
-    "M": ["101", "111", "111", "101", "101"], "O": ["010", "101", "101", "101", "010"],
-    "P": ["110", "101", "110", "100", "100"], "R": ["110", "101", "110", "101", "101"],
-    "S": ["011", "100", "010", "001", "110"],
-    "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
-    "2": ["110", "001", "010", "100", "111"], "3": ["110", "001", "010", "001", "110"],
-    "4": ["101", "101", "111", "001", "001"], "5": ["111", "100", "110", "001", "110"],
-    "6": ["011", "100", "111", "101", "111"], "7": ["111", "001", "010", "010", "010"],
-    "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "110"],
-    ".": ["0", "0", "0", "0", "1"], " ": ["0", "0", "0", "0", "0"],
-}
+# Stat table: two columns of (label bar length, value bar length), like the panel's stat cells.
+STATS = [[(9, 4), (7, 5), (10, 3)], [(8, 4), (11, 3), (6, 5)]]
 
 
 def read_png(path):
@@ -92,12 +80,21 @@ def lerp(a, b, t):
     return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
 
 
-def hologram(rgba, row):
-    """Recolors a sprite pixel the way the hologram looks: a cyan ramp by brightness, with scanlines."""
+def hologram(rgba):
+    """Recolors a sprite pixel the way the hologram looks: a blue ramp by brightness."""
     r, g, b, _ = rgba
     lum = (0.3 * r + 0.59 * g + 0.11 * b) / 255
-    color = lerp(DARK, MID, lum * 2) if lum < 0.5 else lerp(MID, LIGHT, (lum - 0.5) * 2)
-    return lerp(color, BG, 0.3) if row % 2 else color
+    return lerp(DARK, MID, lum * 2) if lum < 0.5 else lerp(MID, LIGHT, (lum - 0.5) * 2)
+
+
+def rounded(x, y, box, radius):
+    """Whether (x, y) is inside box with its corners cut to the given radius."""
+    left, top, right, bottom = box
+    if not (left <= x <= right and top <= y <= bottom):
+        return False
+    cx = left + radius if x < left + radius else right - radius if x > right - radius else x
+    cy = top + radius if y < top + radius else bottom - radius if y > bottom - radius else y
+    return (x - cx) ** 2 + (y - cy) ** 2 <= radius * radius + radius
 
 
 def draw():
@@ -107,49 +104,89 @@ def draw():
         if 0 <= x < SIZE and 0 <= y < SIZE:
             img[y][x] = color
 
-    sprite = read_png(os.path.join(HERE, "the_exotic.png"))
-    sw, sh = len(sprite[0]), len(sprite)
-    sx, sy = (SIZE - sw) // 2, 8
-    solid = {(x, y) for y in range(sh) for x in range(sw) if sprite[y][x][3] > 0}
+    # Casing: platinum body, lit from the top left, with a screw in each corner.
+    case = (1, 1, SIZE - 2, SIZE - 2)
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if rounded(x, y, case, 5):
+                inside_x = rounded(x - 1, y, case, 5) and rounded(x + 1, y, case, 5)
+                inside_y = rounded(x, y - 1, case, 5) and rounded(x, y + 1, case, 5)
+                if not rounded(x - 1, y - 1, case, 5):
+                    put(x, y, CASE_LIGHT)
+                elif not rounded(x + 1, y + 1, case, 5) or not (inside_x and inside_y):
+                    put(x, y, CASE_SHADOW)
+                else:
+                    put(x, y, CASE)
+    for sx in (3, SIZE - 4):
+        for sy in (3, SIZE - 4):
+            put(sx, sy, SCREW)
+            put(sx + 1, sy + 1, CASE_SHADOW)
 
-    # Beam: a dithered cone from the emitter up to the bottom of the hologram, with brighter edges.
-    emit_x, emit_y = SIZE // 2, 58
-    top_y = sy + sh + 1
-    for y in range(top_y, emit_y):
-        t = (emit_y - y) / (emit_y - top_y)
-        left = round(emit_x - 1 - t * (sw / 2 - 2))
-        right = round(emit_x + t * (sw / 2 - 2))
-        for x in range(left + 1, right):
-            if (x + y) % 2 == 0:
-                put(x, y, BEAM)
-        put(left, y, BEAM_EDGE)
-        put(right, y, BEAM_EDGE)
-    for dx in (-1, 0):
-        put(emit_x + dx, emit_y, EMITTER)
-    put(emit_x - 2, emit_y, BEAM_EDGE)
-    put(emit_x + 1, emit_y, BEAM_EDGE)
+    # Screen: recessed (shadow on the top and left edges of the bezel, light on the bottom and right).
+    left, top, right, bottom = SCREEN_BOX
+    bezel = (left - 1, top - 1, right + 1, bottom + 1)
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if rounded(x, y, SCREEN_BOX, 3):
+                put(x, y, SCREEN)
+            elif rounded(x, y, bezel, 4):
+                put(x, y, CASE_SHADOW if x + y < left + top + right + bottom - x - y else CASE_LIGHT)
 
-    # Faint halo around the gun, then the gun itself in hologram colors.
+    # The revolver, scaled up by a whole number so it fills most of the screen's width.
+    sprite = read_png(os.path.join(HERE, "revolver.png"))
+    width = right - left + 1
+    scale = max(1, min(round((width - 10) / len(sprite[0])), (width - 4) // len(sprite[0])))
+    sw, sh = len(sprite[0]) * scale, len(sprite) * scale
+    gx, gy = left + (width - sw) // 2, top + 3
+    solid = {(x, y) for y in range(sh) for x in range(sw) if sprite[y // scale][x // scale][3] > 0}
     for x, y in solid:
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if (nx, ny) not in solid:
-                put(sx + nx, sy + ny, HALO)
+                put(gx + nx, gy + ny, HALO)
     for x, y in solid:
-        put(sx + x, sy + y, hologram(sprite[y][x], sy + y))
+        put(gx + x, gy + y, hologram(sprite[y // scale][x // scale]))
 
-    # Stat lines under the gun: dim labels, bright values.
-    y = sy + sh + 6
-    for label, value in STATS:
-        x = sx
-        for text, color in ((label + " ", LABEL), (value, LIGHT)):
-            for ch in text:
-                glyph = FONT[ch]
-                for gy, line in enumerate(glyph):
-                    for gx, bit in enumerate(line):
-                        if bit == "1":
-                            put(x + gx, y + gy, color)
-                x += len(glyph[0]) + 1
-        y += 7
+    # Divider, then the stat bars: dim labels, bright values.
+    divider = gy + sh + 2
+    for x in range(left + 2, right - 1):
+        put(x, divider, LABEL)
+    column_x = (left + 3, left + (width + 1) // 2 + 1)
+    for column, cells in zip(column_x, STATS):
+        y = divider + 3
+        for label, value in cells:
+            for dy in range(3):
+                for dx in range(label):
+                    put(column + dx, y + dy, LABEL)
+                for dx in range(value):
+                    put(column + label + 2 + dx, y + dy, LIGHT)
+            y += 6
+
+    # Scanlines and darkened corners across the whole screen.
+    for y in range(top, bottom + 1):
+        for x in range(left, right + 1):
+            if rounded(x, y, SCREEN_BOX, 3):
+                if y % 2:
+                    put(x, y, lerp(img[y][x], SCREEN, 0.3))
+                if not rounded(x, y, (left + 1, top + 1, right - 1, bottom - 1), 5):
+                    put(x, y, lerp(img[y][x], SCREEN, 0.4))
+
+    # Light from the screen reflecting off the bezel: each casing pixel near the screen is lit by the
+    # bright screen pixels around it, so it glows brightest beside the revolver and the value bars.
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if rounded(x, y, SCREEN_BOX, 3):
+                continue
+            ring = next((d for d in (1, 2, 3) if rounded(x, y, (left - d, top - d, right + d, bottom + d), 3 + d)), 0)
+            if not ring:
+                continue
+            light = [0, 0, 0]
+            for sy in range(y - 10, y + 11):
+                for sx in range(x - 10, x + 11):
+                    if rounded(sx, sy, SCREEN_BOX, 3):
+                        falloff = 1 / ((sx - x) ** 2 + (sy - y) ** 2)
+                        light = [t + max(0, c - b) * falloff for t, c, b in zip(light, img[sy][sx], SCREEN)]
+            strength = (0.4, 0.22, 0.1)[ring - 1]
+            put(x, y, tuple(min(255, round(c + t * strength)) for c, t in zip(img[y][x], light)))
     return img
 
 
